@@ -411,6 +411,8 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
 
     fun filterChapterByBookmarked() = preferenceStore.getInt(Keys.defaultChapterFilterByBookmarked, Manga.SHOW_ALL)
 
+    fun filterChapterByDuplicates() = preferenceStore.getInt(Keys.defaultChapterFilterByDuplicates, Manga.SHOW_ALL)
+
     fun sortChapterOrder() = preferenceStore.getInt(Keys.defaultChapterSortBySourceOrNumber, Manga.CHAPTER_SORTING_SOURCE)
 
     fun hideChapterTitlesByDefault() = preferenceStore.getBoolean(Keys.hideChapterTitles, false)

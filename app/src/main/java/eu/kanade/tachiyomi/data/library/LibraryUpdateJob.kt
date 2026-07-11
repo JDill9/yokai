@@ -24,6 +24,7 @@ import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.database.models.Category
 import eu.kanade.tachiyomi.data.database.models.Chapter
 import eu.kanade.tachiyomi.data.database.models.LibraryManga
+import eu.kanade.tachiyomi.data.database.models.duplicatesFilter
 import eu.kanade.tachiyomi.data.database.models.prepareCoverUpdate
 import eu.kanade.tachiyomi.data.download.DownloadJob
 import eu.kanade.tachiyomi.data.download.DownloadManager
@@ -420,11 +421,24 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                 val newChapters = syncChaptersWithSource(fetchedChapters, manga.manga, source)
                 if (newChapters.first.isNotEmpty()) {
                     if (shouldDownload) {
-                        downloadChapters(
-                            manga.manga,
-                            newChapters.first.sortedBy { it.chapter_number },
-                        )
-                        hasDownloads = true
+                        var chaptersToDownload = newChapters.first.sortedBy { it.chapter_number }
+                        if (manga.manga.duplicatesFilter(preferences) == Manga.CHAPTER_SHOW_NOT_DUPLICATES) {
+                            // Don't auto-download extra copies of a chapter number that already
+                            // exists in the library or appears multiple times in this update
+                            val existingNumbers = getChapter.awaitAll(manga.manga, false)
+                                .asSequence()
+                                .filter { existing -> newChapters.first.none { it.url == existing.url } }
+                                .map { it.chapter_number }
+                                .filter { it >= 0f }
+                                .toMutableSet()
+                            chaptersToDownload = chaptersToDownload.filter { chapter ->
+                                chapter.chapter_number < 0f || existingNumbers.add(chapter.chapter_number)
+                            }
+                        }
+                        if (chaptersToDownload.isNotEmpty()) {
+                            downloadChapters(manga.manga, chaptersToDownload)
+                            hasDownloads = true
+                        }
                     }
                     newUpdates[manga] =
                         newChapters.first.sortedBy { it.chapter_number }.toTypedArray()

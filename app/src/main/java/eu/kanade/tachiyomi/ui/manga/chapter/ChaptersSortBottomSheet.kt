@@ -39,7 +39,7 @@ class ChaptersSortBottomSheet(controller: MangaDetailsController) :
     init {
         val height = activity.window.decorView.rootWindowInsetsCompat
             ?.getInsetsIgnoringVisibility(systemBars())?.bottom ?: 0
-        sheetBehavior.peekHeight = 470.dpToPx + height
+        sheetBehavior.peekHeight = 510.dpToPx + height
 
         sheetBehavior.addBottomSheetCallback(
             object : BottomSheetBehavior.BottomSheetCallback() {
@@ -146,6 +146,7 @@ class ChaptersSortBottomSheet(controller: MangaDetailsController) :
                 binding.chapterFilterLayout.showUnread.state,
                 binding.chapterFilterLayout.showDownload.state,
                 binding.chapterFilterLayout.showBookmark.state,
+                binding.chapterFilterLayout.hideDuplicates.state,
             )
             binding.chapterFilterLayout.setAsDefaultFilter.isInvisible = true
             binding.chapterFilterLayout.resetAsDefaultFilter.isInvisible = true
@@ -209,6 +210,7 @@ class ChaptersSortBottomSheet(controller: MangaDetailsController) :
             binding.chapterFilterLayout.showUnread.state,
             binding.chapterFilterLayout.showDownload.state,
             binding.chapterFilterLayout.showBookmark.state,
+            binding.chapterFilterLayout.hideDuplicates.state,
         )
         checkIfFilterMatchesDefault(filterLayout)
     }

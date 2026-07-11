@@ -81,6 +81,17 @@ android {
         }
     }
 
+    signingConfigs {
+        // Self-signed key for personal modded builds, so that rebuilt APKs can
+        // install over the previous one (CI debug keystores change every run).
+        create("mod") {
+            storeFile = file("mod-keystore.jks")
+            storePassword = "yokai-mod"
+            keyAlias = "yokai-mod"
+            keyPassword = "yokai-mod"
+        }
+    }
+
     buildTypes {
         getByName("debug") {
             applicationIdSuffix = ".debugYokai"
@@ -104,7 +115,7 @@ android {
             buildConfigField("boolean", "BETA", "true")
             buildConfigField("boolean", "NIGHTLY", "true")
 
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("mod")
             matchingFallbacks.add("release")
             versionNameSuffix = "-r${commitCount}"
             applicationIdSuffix = ".nightlyYokai"

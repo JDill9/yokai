@@ -19,6 +19,7 @@ import eu.kanade.tachiyomi.data.database.models.Track
 import eu.kanade.tachiyomi.data.database.models.bookmarkedFilter
 import eu.kanade.tachiyomi.data.database.models.chapterOrder
 import eu.kanade.tachiyomi.data.database.models.downloadedFilter
+import eu.kanade.tachiyomi.data.database.models.duplicatesFilter
 import eu.kanade.tachiyomi.data.database.models.prepareCoverUpdate
 import eu.kanade.tachiyomi.data.database.models.readFilter
 import eu.kanade.tachiyomi.data.database.models.removeCover
@@ -611,6 +612,7 @@ class MangaDetailsPresenter(
             manga.readFilter == preferences.filterChapterByRead().get() &&
                 manga.downloadedFilter == preferences.filterChapterByDownloaded().get() &&
                 manga.bookmarkedFilter == preferences.filterChapterByBookmarked().get() &&
+                manga.duplicatesFilter == preferences.filterChapterByDuplicates().get() &&
                 manga.hideChapterTitles == preferences.hideChapterTitlesByDefault().get()
             ) || !manga.usesLocalFilter
     }
@@ -627,6 +629,7 @@ class MangaDetailsPresenter(
         unread: TriStateCheckBox.State,
         downloaded: TriStateCheckBox.State,
         bookmarked: TriStateCheckBox.State,
+        duplicates: TriStateCheckBox.State,
     ) {
         manga.readFilter = when (unread) {
             TriStateCheckBox.State.CHECKED -> Manga.CHAPTER_SHOW_UNREAD
@@ -641,6 +644,10 @@ class MangaDetailsPresenter(
         manga.bookmarkedFilter = when (bookmarked) {
             TriStateCheckBox.State.CHECKED -> Manga.CHAPTER_SHOW_BOOKMARKED
             TriStateCheckBox.State.IGNORE -> Manga.CHAPTER_SHOW_NOT_BOOKMARKED
+            else -> Manga.SHOW_ALL
+        }
+        manga.duplicatesFilter = when (duplicates) {
+            TriStateCheckBox.State.CHECKED -> Manga.CHAPTER_SHOW_NOT_DUPLICATES
             else -> Manga.SHOW_ALL
         }
         manga.setFilterToLocal()
@@ -673,6 +680,7 @@ class MangaDetailsPresenter(
         unread: TriStateCheckBox.State,
         downloaded: TriStateCheckBox.State,
         bookmarked: TriStateCheckBox.State,
+        duplicates: TriStateCheckBox.State,
     ) {
         preferences.filterChapterByRead().set(
             when (unread) {
@@ -692,6 +700,12 @@ class MangaDetailsPresenter(
             when (bookmarked) {
                 TriStateCheckBox.State.CHECKED -> Manga.CHAPTER_SHOW_BOOKMARKED
                 TriStateCheckBox.State.IGNORE -> Manga.CHAPTER_SHOW_NOT_BOOKMARKED
+                else -> Manga.SHOW_ALL
+            },
+        )
+        preferences.filterChapterByDuplicates().set(
+            when (duplicates) {
+                TriStateCheckBox.State.CHECKED -> Manga.CHAPTER_SHOW_NOT_DUPLICATES
                 else -> Manga.SHOW_ALL
             },
         )
@@ -716,6 +730,7 @@ class MangaDetailsPresenter(
         filtersId.add(if (manga.downloadedFilter(preferences) == Manga.CHAPTER_SHOW_NOT_DOWNLOADED) MR.strings.not_downloaded else null)
         filtersId.add(if (manga.bookmarkedFilter(preferences) == Manga.CHAPTER_SHOW_BOOKMARKED) MR.strings.bookmarked else null)
         filtersId.add(if (manga.bookmarkedFilter(preferences) == Manga.CHAPTER_SHOW_NOT_BOOKMARKED) MR.strings.not_bookmarked else null)
+        filtersId.add(if (manga.duplicatesFilter(preferences) == Manga.CHAPTER_SHOW_NOT_DUPLICATES) MR.strings.no_duplicates else null)
         filtersId.add(if (isScanlatorFiltered()) MR.strings.scanlators else null)
         return filtersId.filterNotNull()
             .joinToString(", ") { view?.view?.context?.getString(it) ?: "" }

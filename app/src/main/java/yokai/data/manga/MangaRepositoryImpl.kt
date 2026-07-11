@@ -3,15 +3,76 @@ package yokai.data.manga
 import co.touchlab.kermit.Logger
 import eu.kanade.tachiyomi.data.database.models.LibraryManga
 import eu.kanade.tachiyomi.data.database.models.MangaCategory
+import eu.kanade.tachiyomi.data.database.models.duplicatesFilter
 import eu.kanade.tachiyomi.data.database.models.mapper
+import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import eu.kanade.tachiyomi.domain.manga.models.Manga
 import kotlinx.coroutines.flow.Flow
+import uy.kohesive.injekt.injectLazy
 import yokai.data.DatabaseHandler
 import yokai.data.updateStrategyAdapter
 import yokai.domain.manga.MangaRepository
 import yokai.domain.manga.models.MangaUpdate
 
 class MangaRepositoryImpl(private val handler: DatabaseHandler) : MangaRepository {
+    private val preferences: PreferencesHelper by injectLazy()
+
+    /**
+     * When the "Hide duplicate chapters" filter is active for a manga, badge counts
+     * should count each chapter number only once (read if any copy is read).
+     */
+    private fun LibraryManga.applyDuplicatesFilter(): LibraryManga = apply {
+        if (manga.duplicatesFilter(preferences) == Manga.CHAPTER_SHOW_NOT_DUPLICATES) {
+            read = readDeduped
+            unread = maxOf(totalDeduped - readDeduped, 0)
+            totalChapters = totalDeduped
+        }
+    }
+
+    private fun Any?.toCount(): Int = (this as? Number)?.toInt() ?: 0
+
+    // The two deduped count columns are taken as Any? so this stays compatible
+    // with whatever numeric type SQLDelight infers for them in the generated query.
+    private fun mapLibraryManga(
+        id: Long,
+        source: Long,
+        url: String,
+        artist: String?,
+        author: String?,
+        description: String?,
+        genre: String?,
+        title: String,
+        status: Long,
+        thumbnailUrl: String?,
+        favorite: Boolean,
+        lastUpdate: Long?,
+        initialized: Boolean,
+        viewerFlags: Long,
+        hideTitle: Boolean,
+        chapterFlags: Long,
+        dateAdded: Long?,
+        filteredScanlators: String?,
+        updateStrategy: Long,
+        coverLastModified: Long,
+        total: Long,
+        readCount: Double,
+        bookmarkCount: Double,
+        categoryId: Long,
+        latestUpdate: Long,
+        lastRead: Long,
+        lastFetch: Long,
+        totalDedupedCount: Any?,
+        readDedupedCount: Any?,
+    ): LibraryManga = LibraryManga.mapper(
+        id, source, url, artist, author, description, genre, title, status, thumbnailUrl,
+        favorite, lastUpdate, initialized, viewerFlags, hideTitle, chapterFlags, dateAdded,
+        filteredScanlators, updateStrategy, coverLastModified, total, readCount, bookmarkCount,
+        categoryId, latestUpdate, lastRead, lastFetch,
+    ).apply {
+        totalDeduped = totalDedupedCount.toCount()
+        readDeduped = readDedupedCount.toCount()
+    }.applyDuplicatesFilter()
+
     override suspend fun getMangaList(): List<Manga> =
         handler.awaitList { mangasQueries.findAll(Manga::mapper) }
 
@@ -34,10 +95,10 @@ class MangaRepositoryImpl(private val handler: DatabaseHandler) : MangaRepositor
         handler.subscribeToFirstOrNull { mangasQueries.findByUrlAndSource(url, source, Manga::mapper) }
 
     override suspend fun getLibraryManga(): List<LibraryManga> =
-        handler.awaitList { library_viewQueries.findAll(LibraryManga::mapper) }
+        handler.awaitList { library_viewQueries.findAll(::mapLibraryManga) }
 
     override fun getLibraryMangaAsFlow(): Flow<List<LibraryManga>> =
-        handler.subscribeToList { library_viewQueries.findAll(LibraryManga::mapper) }
+        handler.subscribeToList { library_viewQueries.findAll(::mapLibraryManga) }
 
     override suspend fun getDuplicateFavorite(title: String, source: Long): Manga? =
         handler.awaitFirstOrNull { mangasQueries.findDuplicateFavorite(title.lowercase(), source, Manga::mapper) }

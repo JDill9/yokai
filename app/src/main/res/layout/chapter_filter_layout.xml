@@ -80,4 +80,12 @@
         android:layout_marginStart="12dp"
         android:layout_marginEnd="12dp"
         android:text="@string/show_bookmarked_chapters" />
+
+    <eu.kanade.tachiyomi.widget.TriStateCheckBox
+        android:id="@+id/hide_duplicates"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:text="@string/hide_duplicate_chapters" />
 </eu.kanade.tachiyomi.ui.manga.chapter.ChapterFilterLayout>

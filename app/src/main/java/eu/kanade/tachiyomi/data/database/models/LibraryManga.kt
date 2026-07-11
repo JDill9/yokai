@@ -13,6 +13,8 @@ data class LibraryManga(
     var latestUpdate: Long = 0,
     var lastRead: Long = 0,
     var lastFetch: Long = 0,
+    var totalDeduped: Int = 0,
+    var readDeduped: Int = 0,
 ) {
     val hasRead
         get() = read > 0

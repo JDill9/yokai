@@ -190,6 +190,10 @@ interface Manga : SManga {
         get() = chapter_flags and CHAPTER_BOOKMARKED_MASK
         set(filter) = setChapterFlags(filter, CHAPTER_BOOKMARKED_MASK)
 
+    var duplicatesFilter: Int
+        get() = chapter_flags and CHAPTER_DUPLICATES_MASK
+        set(filter) = setChapterFlags(filter, CHAPTER_DUPLICATES_MASK)
+
     var sorting: Int
         get() = chapter_flags and CHAPTER_SORTING_MASK
         set(sort) = setChapterFlags(sort, CHAPTER_SORTING_MASK)
@@ -244,6 +248,9 @@ interface Manga : SManga {
         const val CHAPTER_SHOW_BOOKMARKED = 0x00000020
         const val CHAPTER_SHOW_NOT_BOOKMARKED = 0x00000040
         const val CHAPTER_BOOKMARKED_MASK = 0x00000060
+
+        const val CHAPTER_SHOW_NOT_DUPLICATES = 0x00000080
+        const val CHAPTER_DUPLICATES_MASK = 0x00000080
 
         const val CHAPTER_SORTING_SOURCE = 0x00000000
         const val CHAPTER_SORTING_NUMBER = 0x00000100

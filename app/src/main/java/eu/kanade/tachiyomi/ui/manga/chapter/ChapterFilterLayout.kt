@@ -5,6 +5,7 @@ import android.util.AttributeSet
 import android.widget.LinearLayout
 import eu.kanade.tachiyomi.data.database.models.bookmarkedFilter
 import eu.kanade.tachiyomi.data.database.models.downloadedFilter
+import eu.kanade.tachiyomi.data.database.models.duplicatesFilter
 import eu.kanade.tachiyomi.data.database.models.readFilter
 import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import eu.kanade.tachiyomi.databinding.ChapterFilterLayoutBinding
@@ -20,10 +21,12 @@ class ChapterFilterLayout @JvmOverloads constructor(context: Context, attrs: Att
     override fun onFinishInflate() {
         super.onFinishInflate()
         binding = ChapterFilterLayoutBinding.bind(this)
+        binding.hideDuplicates.skipInversed = true
         binding.showAll.setOnCheckedChangeListener(::checkedFilter)
         binding.showUnread.setOnCheckedChangeListener(::checkedFilter)
         binding.showDownload.setOnCheckedChangeListener(::checkedFilter)
         binding.showBookmark.setOnCheckedChangeListener(::checkedFilter)
+        binding.hideDuplicates.setOnCheckedChangeListener(::checkedFilter)
     }
 
     private fun checkedFilter(checkBox: TriStateCheckBox, state: TriStateCheckBox.State) {
@@ -32,6 +35,7 @@ class ChapterFilterLayout @JvmOverloads constructor(context: Context, attrs: Att
                 binding.showUnread.setState(TriStateCheckBox.State.UNCHECKED, true)
                 binding.showDownload.setState(TriStateCheckBox.State.UNCHECKED)
                 binding.showBookmark.setState(TriStateCheckBox.State.UNCHECKED)
+                binding.hideDuplicates.setState(TriStateCheckBox.State.UNCHECKED)
             } else {
                 if (binding.showAll == checkBox) {
                     binding.showAll.state = TriStateCheckBox.State.CHECKED
@@ -42,7 +46,8 @@ class ChapterFilterLayout @JvmOverloads constructor(context: Context, attrs: Att
         } else if (
             binding.showUnread.isUnchecked &&
             binding.showDownload.isUnchecked &&
-            binding.showBookmark.isUnchecked
+            binding.showBookmark.isUnchecked &&
+            binding.hideDuplicates.isUnchecked
         ) {
             binding.showAll.setState(TriStateCheckBox.State.CHECKED, true)
         }
@@ -65,10 +70,15 @@ class ChapterFilterLayout @JvmOverloads constructor(context: Context, attrs: Att
             Manga.CHAPTER_SHOW_NOT_BOOKMARKED -> TriStateCheckBox.State.IGNORE
             else -> TriStateCheckBox.State.UNCHECKED
         }
+        binding.hideDuplicates.state = when (manga.duplicatesFilter(preferences)) {
+            Manga.CHAPTER_SHOW_NOT_DUPLICATES -> TriStateCheckBox.State.CHECKED
+            else -> TriStateCheckBox.State.UNCHECKED
+        }
 
         binding.showAll.isChecked = binding.showUnread.isUnchecked &&
             binding.showDownload.isUnchecked &&
-            binding.showBookmark.isUnchecked
+            binding.showBookmark.isUnchecked &&
+            binding.hideDuplicates.isUnchecked
     }
 
     /**

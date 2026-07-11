@@ -38,6 +38,8 @@ fun Manga.downloadedFilter(preferences: PreferencesHelper): Int =
     if (usesLocalFilter) downloadedFilter else preferences.filterChapterByDownloaded().get()
 fun Manga.bookmarkedFilter(preferences: PreferencesHelper): Int =
     if (usesLocalFilter) bookmarkedFilter else preferences.filterChapterByBookmarked().get()
+fun Manga.duplicatesFilter(preferences: PreferencesHelper): Int =
+    if (usesLocalFilter) duplicatesFilter else preferences.filterChapterByDuplicates().get()
 fun Manga.hideChapterTitle(preferences: PreferencesHelper): Boolean =
     if (usesLocalFilter) hideChapterTitles else preferences.hideChapterTitlesByDefault().get()
 
