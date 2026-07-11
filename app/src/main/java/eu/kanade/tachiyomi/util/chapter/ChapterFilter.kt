@@ -45,6 +45,15 @@ class ChapterFilter(val preferences: PreferencesHelper = Injekt.get(), val downl
         return filteredChapters
     }
 
+    /** Applies [filterDuplicates] only when the manga's duplicates filter is enabled */
+    fun <T : Chapter> filterDuplicatesIfEnabled(chapters: List<T>, manga: Manga): List<T> {
+        return if (manga.duplicatesFilter(preferences) == Manga.CHAPTER_SHOW_NOT_DUPLICATES) {
+            filterDuplicates(chapters, manga)
+        } else {
+            chapters
+        }
+    }
+
     /**
      * Removes duplicate chapters (same chapter number) from the list, so a chapter that a source
      * posts in multiple versions (e.g. official and fan translation) only shows up once.

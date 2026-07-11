@@ -1498,7 +1498,8 @@ class LibraryPresenter(
         presenterScope.launch {
             withContext(Dispatchers.IO) {
                 mangaList.forEach { list ->
-                    val chapters = getChapter.awaitAll(list).filter { !it.read }
+                    val chapters = chapterFilter.filterDuplicatesIfEnabled(getChapter.awaitAll(list), list)
+                        .filter { !it.read }
                     downloadManager.downloadChapters(list, chapters)
                 }
             }
