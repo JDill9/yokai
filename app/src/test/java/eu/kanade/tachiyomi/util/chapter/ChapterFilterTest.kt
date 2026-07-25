@@ -24,6 +24,7 @@ class ChapterFilterTest {
         preferences = mockk()
         downloadManager = mockk()
         every { downloadManager.isChapterDownloaded(any(), any()) } returns false
+        every { preferences.preferredDuplicateVersion().get() } returns ChapterFilter.DUPLICATE_SMART
         chapterFilter = ChapterFilter(preferences, downloadManager)
     }
 
@@ -33,9 +34,10 @@ class ChapterFilterTest {
         order: Int,
         read: Boolean = false,
         bookmark: Boolean = false,
+        name: String = url,
     ) = ChapterImpl().apply {
         this.url = url
-        this.name = url
+        this.name = name
         this.chapter_number = number
         this.source_order = order
         this.read = read
@@ -104,6 +106,41 @@ class ChapterFilterTest {
         val result = chapterFilter.filterDuplicates(listOf(ch3, ch2a, ch2b, ch1), manga)
 
         assertEquals(listOf<Chapter>(ch3, ch2a, ch1), result)
+    }
+
+    @Test
+    fun `prefer official keeps the official copy even when the fan copy is downloaded`() {
+        every { preferences.preferredDuplicateVersion().get() } returns ChapterFilter.DUPLICATE_PREFER_OFFICIAL
+        val fan = chapter("/fan/12", 12f, 0)
+        val official = chapter("/official/12", 12f, 1, name = "Chapter 12 (1r0n)")
+        every { downloadManager.isChapterDownloaded(fan, manga) } returns true
+
+        val result = chapterFilter.filterDuplicates(listOf(fan, official), manga)
+
+        assertEquals(listOf<Chapter>(official), result)
+    }
+
+    @Test
+    fun `prefer fan keeps the fan copy even when the official copy is downloaded or read`() {
+        every { preferences.preferredDuplicateVersion().get() } returns ChapterFilter.DUPLICATE_PREFER_FAN
+        val official = chapter("/official/12", 12f, 0, read = true, name = "Chapter 12 (1r0n)")
+        val fan = chapter("/fan/12", 12f, 1)
+        every { downloadManager.isChapterDownloaded(official, manga) } returns true
+
+        val result = chapterFilter.filterDuplicates(listOf(official, fan), manga)
+
+        assertEquals(listOf<Chapter>(fan), result)
+    }
+
+    @Test
+    fun `preferred version falls back to smart picking when copies are indistinguishable`() {
+        every { preferences.preferredDuplicateVersion().get() } returns ChapterFilter.DUPLICATE_PREFER_OFFICIAL
+        val first = chapter("/a/12", 12f, 0, name = "Chapter 12")
+        val second = chapter("/b/12", 12f, 1, read = true, name = "Chapter 12")
+
+        val result = chapterFilter.filterDuplicates(listOf(first, second), manga)
+
+        assertEquals(listOf<Chapter>(second), result)
     }
 
     @Test
