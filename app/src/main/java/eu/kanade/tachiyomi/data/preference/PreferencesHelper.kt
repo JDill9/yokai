@@ -16,6 +16,7 @@ import eu.kanade.tachiyomi.ui.library.filter.FilterBottomSheet
 import eu.kanade.tachiyomi.ui.reader.settings.OrientationType
 import eu.kanade.tachiyomi.ui.reader.settings.PageLayout
 import eu.kanade.tachiyomi.ui.reader.settings.ReaderBottomButton
+import eu.kanade.tachiyomi.util.chapter.ChapterFilter
 import eu.kanade.tachiyomi.ui.reader.settings.ReadingModeType
 import eu.kanade.tachiyomi.ui.reader.viewer.ViewerNavigation
 import eu.kanade.tachiyomi.ui.recents.RecentsPresenter
@@ -412,6 +413,8 @@ class PreferencesHelper(val context: Context, val preferenceStore: PreferenceSto
     fun filterChapterByBookmarked() = preferenceStore.getInt(Keys.defaultChapterFilterByBookmarked, Manga.SHOW_ALL)
 
     fun filterChapterByDuplicates() = preferenceStore.getInt(Keys.defaultChapterFilterByDuplicates, Manga.SHOW_ALL)
+
+    fun preferredDuplicateVersion() = preferenceStore.getInt(Keys.preferredDuplicateVersion, ChapterFilter.DUPLICATE_SMART)
 
     fun sortChapterOrder() = preferenceStore.getInt(Keys.defaultChapterSortBySourceOrNumber, Manga.CHAPTER_SORTING_SOURCE)
 
