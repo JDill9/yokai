@@ -58,28 +58,50 @@ class ChapterFilter(val preferences: PreferencesHelper = Injekt.get(), val downl
      * Removes duplicate chapters (same chapter number) from the list, so a chapter that a source
      * posts in multiple versions (e.g. official and fan translation) only shows up once.
      *
-     * For each group of chapters sharing a number, the copy that is kept is picked by:
-     * already downloaded > read > bookmarked > first one listed by the source.
-     * Chapters with an unknown chapter number (< 0) are never treated as duplicates.
+     * The preferred version setting picks which copies are considered first (official or fan,
+     * recognized by markers like "official"/"1r0n" in the chapter name). Within the considered
+     * copies the kept one is picked by: already downloaded > read > bookmarked > first one listed
+     * by the source. Chapters with an unknown chapter number (< 0) are never treated as duplicates.
      */
     fun <T : Chapter> filterDuplicates(chapters: List<T>, manga: Manga): List<T> {
         val byNumber = chapters.filter { it.chapter_number >= 0f }.groupBy { it.chapter_number }
         if (byNumber.values.none { it.size > 1 }) return chapters
+        val preferredVersion = preferences.preferredDuplicateVersion().get()
         val keptDuplicates = HashSet<Chapter>()
         byNumber.values.forEach { group ->
             if (group.size < 2) return@forEach
-            val bySourceOrder = group.sortedBy { it.source_order }
-            keptDuplicates.add(
-                bySourceOrder.firstOrNull { downloadManager.isChapterDownloaded(it, manga) }
-                    ?: bySourceOrder.firstOrNull { it.read }
-                    ?: bySourceOrder.firstOrNull { it.bookmark }
-                    ?: bySourceOrder.first(),
-            )
+            keptDuplicates.add(pickDuplicate(group, preferredVersion, manga))
         }
         return chapters.filter { chapter ->
             chapter.chapter_number < 0f ||
                 (byNumber[chapter.chapter_number]?.size ?: 1) < 2 ||
                 keptDuplicates.contains(chapter)
+        }
+    }
+
+    private fun <T : Chapter> pickDuplicate(group: List<T>, preferredVersion: Int, manga: Manga): T {
+        val bySourceOrder = group.sortedBy { it.source_order }
+        val preferred = when (preferredVersion) {
+            DUPLICATE_PREFER_OFFICIAL -> bySourceOrder.filter { it.isOfficialVersion() }
+            DUPLICATE_PREFER_FAN -> bySourceOrder.filterNot { it.isOfficialVersion() }
+            else -> emptyList()
+        }.ifEmpty { bySourceOrder }
+        return preferred.firstOrNull { downloadManager.isChapterDownloaded(it, manga) }
+            ?: preferred.firstOrNull { it.read }
+            ?: preferred.firstOrNull { it.bookmark }
+            ?: preferred.first()
+    }
+
+    companion object {
+        const val DUPLICATE_SMART = 0
+        const val DUPLICATE_PREFER_OFFICIAL = 1
+        const val DUPLICATE_PREFER_FAN = 2
+
+        private val OFFICIAL_MARKERS = arrayOf("official", "1r0n")
+
+        /** Whether this chapter looks like an official translation based on its name */
+        fun Chapter.isOfficialVersion(): Boolean {
+            return OFFICIAL_MARKERS.any { name.contains(it, ignoreCase = true) }
         }
     }
 
