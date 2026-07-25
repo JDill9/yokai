@@ -1323,6 +1323,7 @@ class LibraryPresenter(
     fun getFirstUnread(manga: Manga): Chapter? {
         // FIXME: Don't do blocking
         val chapters = runBlocking { getChapter.awaitAll(manga) }
+            .let { chapterFilter.filterDuplicatesIfEnabled(it, manga) }
         return ChapterSort(manga, chapterFilter, preferences).getNextUnreadChapter(chapters, false)
     }
 
