@@ -224,6 +224,8 @@ object PreferenceKeys {
 
     const val defaultChapterFilterByDuplicates = "default_chapter_filter_by_duplicates"
 
+    const val preferredDuplicateVersion = "preferred_duplicate_version"
+
     const val defaultChapterSortBySourceOrNumber = "default_chapter_sort_by_source_or_number" // and upload date
 
     const val defaultChapterSortByAscendingOrDescending = "default_chapter_sort_by_ascending_or_descending"
