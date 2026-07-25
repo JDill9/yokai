@@ -26,6 +26,7 @@ import eu.kanade.tachiyomi.ui.setting.preference
 import eu.kanade.tachiyomi.ui.setting.preferenceCategory
 import eu.kanade.tachiyomi.ui.setting.switchPreference
 import eu.kanade.tachiyomi.ui.setting.triStateListPreference
+import eu.kanade.tachiyomi.util.chapter.ChapterFilter
 import eu.kanade.tachiyomi.util.system.launchIO
 import eu.kanade.tachiyomi.util.system.launchUI
 import eu.kanade.tachiyomi.util.view.withFadeTransaction
@@ -232,6 +233,21 @@ class SettingsLibraryController : SettingsLegacyController() {
                 entriesRes = entries.keys.toTypedArray()
                 entryValues = entries.values.toList()
                 noSelectionRes = MR.strings.none
+            }
+            intListPreference(activity) {
+                key = Keys.preferredDuplicateVersion
+                titleRes = MR.strings.pref_preferred_duplicate_version
+                entriesRes = arrayOf(
+                    MR.strings.duplicate_version_smart,
+                    MR.strings.duplicate_version_official,
+                    MR.strings.duplicate_version_fan,
+                )
+                entryValues = listOf(
+                    ChapterFilter.DUPLICATE_SMART,
+                    ChapterFilter.DUPLICATE_PREFER_OFFICIAL,
+                    ChapterFilter.DUPLICATE_PREFER_FAN,
+                )
+                defaultValue = ChapterFilter.DUPLICATE_SMART
             }
         }
     }
