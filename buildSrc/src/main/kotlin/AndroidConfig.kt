@@ -2,7 +2,11 @@ import org.gradle.api.JavaVersion as GradleJavaVersion
 
 object AndroidConfig {
     const val COMPILE_SDK = 36
-    const val MIN_SDK = 23
+    // Raised from 23: the July 2026 keiyoushi extension builds rely on JVM default
+    // interface methods (kotlinx.serialization 1.8+). With minSdk < 24, D8 desugars
+    // those methods away and every extension crashes with AbstractMethodError
+    // (typeParametersSerializers). Mihon uses minSdk 26 for the same reason.
+    const val MIN_SDK = 26
 
     // Kept at 35 (like Mihon and Yokai stable) so Android 16+ keeps honoring
     // per-series orientation locks; targeting 36 makes the system ignore
