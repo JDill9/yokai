@@ -102,3 +102,8 @@
 # Firebase
 -keep class com.google.firebase.installations.** { *; }
 -keep interface com.google.firebase.installations.** { *; }
+
+# Zstd HTTP compression (JNI resolves these classes reflectively; R8 must not strip them,
+# otherwise responses with content-encoding: zstd crash the app with ClassNotFoundException)
+-keep class com.squareup.zstd.** { *; }
+-keep class okhttp3.zstd.** { *; }
