@@ -1,0 +1,87 @@
+name: Sync upstream and build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    name: Merge upstream, keep mods
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Merge upstream and re-apply mod fixes
+        run: |
+          set -eu
+          git config user.name "JDill9"
+          git config user.email "JDill9@users.noreply.github.com"
+          git remote add upstream https://github.com/null2264/yokai.git
+          git fetch --no-tags upstream ceb01113bd867d32bf2c7414afce00cf5524c678
+          git merge --no-commit ceb01113bd867d32bf2c7414afce00cf5524c678 || true
+          C=$(git diff --name-only --diff-filter=U | sort | tr '\n' ' ')
+          echo "conflicts: $C"
+          [ "$C" = "buildSrc/src/main/kotlin/AndroidConfig.kt data/src/commonMain/sqldelight/tachiyomi/migrations/29.sqm gradle/kotlinx.versions.toml " ]
+          git checkout --ours buildSrc/src/main/kotlin/AndroidConfig.kt
+          git checkout --ours data/src/commonMain/sqldelight/tachiyomi/migrations/29.sqm
+          git checkout --theirs gradle/kotlinx.versions.toml
+          python3 - <<'PY'
+          import pathlib
+          view = pathlib.Path("data/src/commonMain/sqldelight/tachiyomi/view/library_view.sq").read_text()
+          create = view.split(";")[0] + ";\n"
+          assert create.startswith("CREATE VIEW library_view") and "total_deduped" in create
+          pathlib.Path("data/src/commonMain/sqldelight/tachiyomi/migrations/30.sqm").write_text(
+              "ALTER TABLE chapters\nADD COLUMN memo TEXT NOT NULL DEFAULT '{}';\n\n"
+              "ALTER TABLE mangas\nADD COLUMN memo TEXT NOT NULL DEFAULT '{}';\n\n"
+              "DROP VIEW IF EXISTS library_view;\n" + create)
+          p = pathlib.Path("app/src/main/java/yokai/data/manga/MangaRepositoryImpl.kt")
+          t = p.read_text()
+          a = "        coverLastModified: Long,\n        total: Long,"
+          b = "        coverLastModified: Long,\n        memo: String,\n        total: Long,"
+          c = "updateStrategy, coverLastModified, total, readCount"
+          d = "updateStrategy, coverLastModified, memo, total, readCount"
+          assert t.count(a) == 1 and t.count(c) == 1
+          p.write_text(t.replace(a, b).replace(c, d))
+          print("mod fixes applied")
+          PY
+          grep -q "memo TEXT" data/src/commonMain/sqldelight/tachiyomi/data/chapters.sq
+          grep -q "memo TEXT" data/src/commonMain/sqldelight/tachiyomi/migrations/30.sqm
+          grep -q "total_deduped" data/src/commonMain/sqldelight/tachiyomi/view/library_view.sq
+          grep -q "MIN_SDK = 26" buildSrc/src/main/kotlin/AndroidConfig.kt
+          git add -A
+          git commit -m "Merge upstream: persist memo so Asura chapters keep loading, keep mods"
+          git push -f origin HEAD:refs/heads/upstream-sync
+
+  build:
+    name: Build app
+    needs: sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: upstream-sync
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: temurin
+
+      - name: Copy CI gradle.properties
+        run: |
+          mkdir -p ~/.gradle
+          cp .github/runner-files/ci-gradle.properties ~/.gradle/gradle.properties
+
+      - name: Build the app
+        run: ./gradlew assembleStandardNightly
+
+      - name: Run unit tests
+        run: ./gradlew testStandardNightlyUnitTest
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: yokai-mod-apks
+          path: app/build/outputs/apk/standard/nightly/*.apk
