@@ -7,6 +7,8 @@ import eu.kanade.tachiyomi.data.database.models.duplicatesFilter
 import eu.kanade.tachiyomi.data.database.models.mapper
 import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import eu.kanade.tachiyomi.domain.manga.models.Manga
+import eu.kanade.tachiyomi.source.model.encodeMemo
+import eu.kanade.tachiyomi.source.model.safeMemo
 import kotlinx.coroutines.flow.Flow
 import uy.kohesive.injekt.injectLazy
 import yokai.data.DatabaseHandler
@@ -54,6 +56,7 @@ class MangaRepositoryImpl(private val handler: DatabaseHandler) : MangaRepositor
         filteredScanlators: String?,
         updateStrategy: Long,
         coverLastModified: Long,
+        memo: String,
         total: Long,
         readCount: Double,
         bookmarkCount: Double,
@@ -66,7 +69,7 @@ class MangaRepositoryImpl(private val handler: DatabaseHandler) : MangaRepositor
     ): LibraryManga = LibraryManga.mapper(
         id, source, url, artist, author, description, genre, title, status, thumbnailUrl,
         favorite, lastUpdate, initialized, viewerFlags, hideTitle, chapterFlags, dateAdded,
-        filteredScanlators, updateStrategy, coverLastModified, total, readCount, bookmarkCount,
+        filteredScanlators, updateStrategy, coverLastModified, memo, total, readCount, bookmarkCount,
         categoryId, latestUpdate, lastRead, lastFetch,
     ).apply {
         totalDeduped = totalDedupedCount.toCount()
@@ -146,6 +149,7 @@ class MangaRepositoryImpl(private val handler: DatabaseHandler) : MangaRepositor
                     filteredScanlators = update.filteredScanlators,
                     updateStrategy = update.updateStrategy?.let(updateStrategyAdapter::encode),
                     coverLastModified = update.coverLastModified,
+                    memo = update.memo,
                     mangaId = update.id,
                 )
             }
@@ -174,6 +178,7 @@ class MangaRepositoryImpl(private val handler: DatabaseHandler) : MangaRepositor
                 filteredScanlators = manga.filtered_scanlators,
                 updateStrategy = manga.update_strategy.let(updateStrategyAdapter::encode),
                 coverLastModified = manga.cover_last_modified,
+                memo = manga.safeMemo().encodeMemo(),
             )
             mangasQueries.selectLastInsertedRowId()
         }
