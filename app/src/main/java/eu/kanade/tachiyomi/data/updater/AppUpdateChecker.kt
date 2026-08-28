@@ -103,10 +103,12 @@ val RELEASE_TAG: String by lazy {
 }
 
 val GITHUB_REPO: String by lazy {
+    // Modded build: check this fork for updates instead of upstream Yokai, so the
+    // app never offers to replace the mod with an official release.
     if (BuildConfig.NIGHTLY) {
-        "null2264/yokai-nightly"
+        "JDill9/yokai"
     } else {
-        "null2264/yokai"
+        "JDill9/yokai"
     }
 }
 
